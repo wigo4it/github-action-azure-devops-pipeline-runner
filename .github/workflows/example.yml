@@ -1,0 +1,103 @@
+name: Example - Run Azure DevOps Pipeline
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment"
+        required: true
+        default: "staging"
+        type: choice
+        options:
+          - staging
+          - production
+      pipeline_id:
+        description: "Azure DevOps Pipeline ID"
+        required: true
+        default: "123"
+      preview_only:
+        description: "Preview run only (do not execute)"
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  run-azure-devops-pipeline:
+    runs-on: self-hosted # Must be a self-hosted runner with Managed Identity
+    name: Run Azure DevOps Pipeline
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Azure DevOps Pipeline
+        uses: wigo4it/github-action-azure-devops-pipeline-runner@v1
+        id: run-pipeline
+        with:
+          azure-devops-organization: "myorg"
+          azure-devops-project: "myproject"
+          pipeline-id: ${{ github.event.inputs.pipeline_id }}
+          preview-run: ${{ github.event.inputs.preview_only }}
+          branch: ${{ github.ref }}
+          pipeline-parameters: |
+            {
+              "environment": "${{ github.event.inputs.environment }}",
+              "sourceCommit": "${{ github.sha }}",
+              "buildReason": "GitHub Actions",
+              "requestedBy": "${{ github.actor }}"
+            }
+          pipeline-variables: |
+            {
+              "GITHUB_RUN_ID": {
+                "value": "${{ github.run_id }}",
+                "isSecret": false
+              },
+              "GITHUB_RUN_NUMBER": {
+                "value": "${{ github.run_number }}",
+                "isSecret": false
+              },
+              "GITHUB_REPOSITORY": {
+                "value": "${{ github.repository }}",
+                "isSecret": false
+              }
+            }
+
+      - name: Display Pipeline Results
+        run: |
+          echo "✅ Pipeline execution completed!"
+          echo "🆔 Run ID: ${{ steps.run-pipeline.outputs.run-id }}"
+          echo "📝 Run Name: ${{ steps.run-pipeline.outputs.run-name }}"
+          echo "🔄 Status: ${{ steps.run-pipeline.outputs.status }}"
+          echo "🔗 URL: ${{ steps.run-pipeline.outputs.run-url }}"
+
+          if [ "${{ github.event.inputs.preview_only }}" = "true" ]; then
+            echo "ℹ️ This was a preview run - no actual execution occurred"
+          fi
+
+      - name: Comment on PR (if applicable)
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const runUrl = '${{ steps.run-pipeline.outputs.run-url }}';
+            const runId = '${{ steps.run-pipeline.outputs.run-id }}';
+            const status = '${{ steps.run-pipeline.outputs.status }}';
+            const isPreview = '${{ github.event.inputs.preview_only }}' === 'true';
+
+            const body = `## 🚀 Azure DevOps Pipeline ${isPreview ? 'Preview' : 'Execution'}
+
+            **Pipeline Run Details:**
+            - 🆔 **Run ID:** ${runId}
+            - 🔄 **Status:** ${status}
+            - 🔗 **URL:** [View in Azure DevOps](${runUrl})
+            - 🌍 **Environment:** ${{ github.event.inputs.environment }}
+            ${isPreview ? '\n⚠️ **Note:** This was a preview run - no actual execution occurred' : ''}
+
+            Triggered by: @${{ github.actor }}`;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });

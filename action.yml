@@ -1,0 +1,46 @@
+name: "Azure DevOps Pipeline Runner"
+description: "Run Azure DevOps pipelines from GitHub Actions using Managed Identity"
+author: "wigo4it"
+branding:
+  icon: "play"
+  color: "blue"
+
+inputs:
+  azure-devops-organization:
+    description: "Azure DevOps organization name"
+    required: true
+  azure-devops-project:
+    description: "Azure DevOps project name or ID"
+    required: true
+  pipeline-id:
+    description: "Pipeline ID to run"
+    required: true
+  pipeline-parameters:
+    description: "Pipeline parameters as JSON string (optional)"
+    required: false
+    default: "{}"
+  pipeline-variables:
+    description: "Pipeline variables as JSON string (optional)"
+    required: false
+    default: "{}"
+  branch:
+    description: "Branch/ref to run pipeline from (optional)"
+    required: false
+  preview-run:
+    description: "If true, preview the run without actually executing it"
+    required: false
+    default: "false"
+
+outputs:
+  run-id:
+    description: "The ID of the created pipeline run"
+  run-url:
+    description: "Direct URL to the pipeline run"
+  status:
+    description: "Initial status of the pipeline run"
+  run-name:
+    description: "Name of the pipeline run"
+
+runs:
+  using: "node20"
+  main: "dist/index.js"
