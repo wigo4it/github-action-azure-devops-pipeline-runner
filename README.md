@@ -1,5 +1,10 @@
 # Azure DevOps Pipeline Runner
 
+[![CI/CD](https://github.com/wigo4it/github-action-azure-devops-pipeline-runner/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/wigo4it/github-action-azure-devops-pipeline-runner/actions/workflows/ci-cd.yml)
+[![Check PR](https://github.com/wigo4it/github-action-azure-devops-pipeline-runner/actions/workflows/check-pr.yml/badge.svg)](https://github.com/wigo4it/github-action-azure-devops-pipeline-runner/actions/workflows/check-pr.yml)
+[![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/wigo4it/github-action-azure-devops-pipeline-runner)](https://github.com/wigo4it/github-action-azure-devops-pipeline-runner/releases)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 A GitHub Action that enables running Azure DevOps pipelines from GitHub workflows using Azure Managed Identity authentication.
 
 ## Features

@@ -1,0 +1,132 @@
+name: Manual Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      release-type:
+        description: 'Release type'
+        required: true
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+        default: 'patch'
+      pre-release:
+        description: 'Create as pre-release'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  pull-requests: read
+
+jobs:
+  manual-release:
+    name: Create Manual Release
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Configure git
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+
+      - name: Run tests and build
+        run: |
+          npm run lint
+          npm test
+          npm run build
+          npm run package
+
+      - name: Commit updated dist/
+        run: |
+          git add dist/
+          if ! git diff --staged --quiet; then
+            git commit -m "chore: update dist/ for manual release"
+            git push
+          fi
+
+      - name: Create manual release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Get current version
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          echo "Current version: $CURRENT_VERSION"
+          
+          # Calculate new version based on input
+          case "${{ github.event.inputs.release-type }}" in
+            "patch")
+              NEW_VERSION=$(npx semver -i patch $CURRENT_VERSION)
+              ;;
+            "minor")
+              NEW_VERSION=$(npx semver -i minor $CURRENT_VERSION)
+              ;;
+            "major")
+              NEW_VERSION=$(npx semver -i major $CURRENT_VERSION)
+              ;;
+          esac
+          
+          if [ "${{ github.event.inputs.pre-release }}" = "true" ]; then
+            NEW_VERSION="${NEW_VERSION}-alpha.$(date +%s)"
+          fi
+          
+          echo "New version: $NEW_VERSION"
+          
+          # Update package.json
+          npm version $NEW_VERSION --no-git-tag-version
+          
+          # Commit version bump
+          git add package.json package-lock.json
+          git commit -m "chore: bump version to $NEW_VERSION [skip ci]"
+          
+          # Create tag
+          git tag -a "v$NEW_VERSION" -m "Release v$NEW_VERSION"
+          
+          # Push changes and tag
+          git push
+          git push origin "v$NEW_VERSION"
+          
+          # Create GitHub release
+          PRERELEASE_FLAG=""
+          if [ "${{ github.event.inputs.pre-release }}" = "true" ]; then
+            PRERELEASE_FLAG="--prerelease"
+          fi
+          
+          gh release create "v$NEW_VERSION" \
+            --title "Release v$NEW_VERSION" \
+            --notes "Manual release v$NEW_VERSION (type: ${{ github.event.inputs.release-type }})" \
+            $PRERELEASE_FLAG
+          
+          # Update major version tag if not pre-release
+          if [ "${{ github.event.inputs.pre-release }}" != "true" ]; then
+            MAJOR_VERSION=$(echo $NEW_VERSION | cut -d. -f1)
+            MAJOR_TAG="v$MAJOR_VERSION"
+            
+            # Delete and recreate major version tag
+            git tag -d $MAJOR_TAG 2>/dev/null || true
+            git push origin :refs/tags/$MAJOR_TAG 2>/dev/null || true
+            git tag -a $MAJOR_TAG -m "Update $MAJOR_TAG to v$NEW_VERSION"
+            git push origin $MAJOR_TAG
+            
+            echo "Updated major version tag: $MAJOR_TAG"
+          fi
+          
+          echo "✅ Manual release v$NEW_VERSION created successfully!"

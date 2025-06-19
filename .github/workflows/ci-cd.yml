@@ -1,0 +1,300 @@
+name: CI/CD
+
+on:
+  pull_request:
+    branches:
+      - main
+    types: [opened, synchronize, reopened]
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+  pull-requests: read
+  checks: write
+
+jobs:
+  # Job that runs on all pull requests and main branch pushes
+  test-and-build:
+    name: Test and Build
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Needed for semantic versioning
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run linting
+        run: npm run lint
+
+      - name: Run tests
+        run: npm test
+
+      - name: Build TypeScript
+        run: npm run build
+
+      - name: Package for distribution
+        run: npm run package
+
+      - name: Check for uncommitted changes in dist/
+        run: |
+          if [ -n "$(git diff --name-only dist/)" ]; then
+            echo "::error::The dist/ directory has uncommitted changes after build. Please run 'npm run package' and commit the changes."
+            git diff --name-only dist/
+            exit 1
+          fi
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts
+          path: |
+            dist/
+            coverage/
+          retention-days: 30
+
+  # Job that only runs when code is pushed to main (after PR merge)
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    needs: test-and-build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    outputs:
+      version: ${{ steps.semantic-version.outputs.version }}
+      major-version: ${{ steps.semantic-version.outputs.major-version }}
+      should-release: ${{ steps.semantic-version.outputs.should-release }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Determine semantic version
+        id: semantic-version
+        run: |
+          # Install semantic-release dependencies
+          npm install --no-save semantic-release @semantic-release/changelog @semantic-release/git @semantic-release/github
+
+          # Configure git
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+
+          # Check if there are any releasable changes
+          npx semantic-release --dry-run > semantic-release-output.txt 2>&1 || true
+          
+          if grep -q "The next release version is" semantic-release-output.txt; then
+            VERSION=$(grep "The next release version is" semantic-release-output.txt | sed 's/.*The next release version is \([0-9.]*\).*/\1/')
+            MAJOR_VERSION=$(echo $VERSION | cut -d. -f1)
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+            echo "major-version=v$MAJOR_VERSION" >> $GITHUB_OUTPUT
+            echo "should-release=true" >> $GITHUB_OUTPUT
+            echo "New version will be: $VERSION"
+          else
+            echo "should-release=false" >> $GITHUB_OUTPUT
+            echo "No releasable changes found"
+          fi
+
+      - name: Build and package
+        if: steps.semantic-version.outputs.should-release == 'true'
+        run: |
+          npm run build
+          npm run package
+
+      - name: Commit updated dist/
+        if: steps.semantic-version.outputs.should-release == 'true'
+        run: |
+          git add dist/
+          if ! git diff --staged --quiet; then
+            git commit -m "chore: update dist/ for v${{ steps.semantic-version.outputs.version }}"
+            git push
+          fi
+
+      - name: Create semantic release
+        if: steps.semantic-version.outputs.should-release == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Create .releaserc.json for semantic-release configuration
+          cat > .releaserc.json << 'EOF'
+          {
+            "branches": ["main"],
+            "plugins": [
+              "@semantic-release/commit-analyzer",
+              "@semantic-release/release-notes-generator",
+              [
+                "@semantic-release/changelog",
+                {
+                  "changelogFile": "CHANGELOG.md"
+                }
+              ],
+              [
+                "@semantic-release/npm",
+                {
+                  "npmPublish": false
+                }
+              ],
+              [
+                "@semantic-release/git",
+                {
+                  "assets": ["package.json", "CHANGELOG.md"],
+                  "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
+                }
+              ],
+              "@semantic-release/github"
+            ]
+          }
+          EOF
+
+          # Run semantic-release
+          npx semantic-release
+
+  # Job that creates/updates major version tags (v1, v2, etc.)
+  update-major-version-tag:
+    name: Update Major Version Tag
+    runs-on: ubuntu-latest
+    needs: release
+    if: needs.release.outputs.should-release == 'true'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure git
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+
+      - name: Update major version tag
+        run: |
+          MAJOR_TAG="${{ needs.release.outputs.major-version }}"
+          VERSION="v${{ needs.release.outputs.version }}"
+          
+          echo "Updating major version tag $MAJOR_TAG to point to $VERSION"
+          
+          # Delete the major version tag if it exists
+          git tag -d $MAJOR_TAG 2>/dev/null || true
+          git push origin :refs/tags/$MAJOR_TAG 2>/dev/null || true
+          
+          # Create new major version tag pointing to the latest release
+          git tag -a $MAJOR_TAG -m "Update $MAJOR_TAG to $VERSION"
+          git push origin $MAJOR_TAG
+
+      - name: Update action marketplace
+        run: |
+          echo "Major version tag ${{ needs.release.outputs.major-version }} has been updated."
+          echo "Users can now reference this action as:"
+          echo "  uses: wigo4it/github-action-azure-devops-pipeline-runner@${{ needs.release.outputs.major-version }}"
+          echo "  uses: wigo4it/github-action-azure-devops-pipeline-runner@v${{ needs.release.outputs.version }}"
+
+  # Job that runs only on pull requests to validate the package
+  validate-pr:
+    name: Validate PR
+    runs-on: ubuntu-latest
+    needs: test-and-build
+    if: github.event_name == 'pull_request'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts
+
+      - name: Validate action.yml
+        run: |
+          if [ ! -f "action.yml" ]; then
+            echo "::error::action.yml not found"
+            exit 1
+          fi
+          
+          # Basic validation of action.yml structure
+          if ! grep -q "runs:" action.yml; then
+            echo "::error::action.yml missing 'runs' section"
+            exit 1
+          fi
+          
+          if ! grep -q "using: 'node20'" action.yml; then
+            echo "::error::action.yml should use 'node20'"
+            exit 1
+          fi
+          
+          if ! grep -q "main: 'dist/index.js'" action.yml; then
+            echo "::error::action.yml should reference 'dist/index.js'"
+            exit 1
+          fi
+
+      - name: Validate dist/ directory
+        run: |
+          if [ ! -f "dist/index.js" ]; then
+            echo "::error::dist/index.js not found"
+            exit 1
+          fi
+          
+          echo "✅ Action package validation passed"
+
+      - name: Comment on PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            
+            // Read test results if available
+            let testSummary = "✅ All tests passed";
+            if (fs.existsSync('coverage/lcov.info')) {
+              testSummary += "\n📊 Code coverage report available in artifacts";
+            }
+            
+            const comment = `## 🚀 PR Validation Results
+            
+            ${testSummary}
+            
+            ### ✅ Validation Status
+            - TypeScript compilation: ✅ Passed
+            - Linting: ✅ Passed  
+            - Unit tests: ✅ Passed
+            - Package build: ✅ Passed
+            - Action validation: ✅ Passed
+            
+            This PR is ready for review! When merged to main, a new version will be automatically released if there are semantic changes.
+            
+            ### 📝 Semantic Versioning
+            This action uses conventional commits for semantic versioning:
+            - \`fix:\` → patch version (v1.0.1)
+            - \`feat:\` → minor version (v1.1.0)  
+            - \`feat!:\` or \`BREAKING CHANGE:\` → major version (v2.0.0)
+            `;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });

@@ -37,7 +37,7 @@ Follow this recommended structure for the GitHub Action:
 
 - Define inputs for Azure DevOps organization, project, pipeline ID
 - Support optional pipeline parameters as JSON input
-- Specify Node.js runtime (node20)
+- Specify Node.js runtime (node22)
 - Main entry point should be `dist/index.js`
 
 ### 2. Authentication (`src/auth.ts`)

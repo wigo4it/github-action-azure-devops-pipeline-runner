@@ -1,0 +1,87 @@
+# Dependabot configuration for automatic dependency updates
+# See: https://docs.github.com/github/administering-a-repository/configuration-options-for-dependency-updates
+
+version: 2
+updates:
+  # Monitor npm dependencies
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "UTC"
+    # Group dependency updates to reduce PR noise
+    groups:
+      # Group all production dependencies together
+      production-dependencies:
+        patterns:
+          - "@actions/*"
+          - "node-fetch"
+        update-types:
+          - "minor"
+          - "patch"
+      # Group development dependencies
+      development-dependencies:
+        patterns:
+          - "@types/*"
+          - "@typescript-eslint/*"
+          - "@vercel/*"
+          - "eslint*"
+          - "jest*"
+          - "ts-jest"
+          - "typescript"
+        update-types:
+          - "minor"
+          - "patch"
+    # Only allow security updates and minor/patch updates for stability
+    open-pull-requests-limit: 5
+    assignees:
+      - "wigo4it"
+    commit-message:
+      prefix: "deps"
+      prefix-development: "deps-dev"
+      include: "scope"
+    # Add custom labels for easier identification
+    labels:
+      - "dependencies"
+      - "automated"
+    # Automatically rebase PRs when conflicts occur
+    rebase-strategy: "auto"
+    # Ignore major version updates for critical dependencies to avoid breaking changes
+    ignore:
+      - dependency-name: "@actions/core"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@actions/github"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "node-fetch"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
+
+  # Monitor GitHub Actions used in workflows
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "UTC"
+    groups:
+      # Group all GitHub Actions updates together
+      github-actions:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+    open-pull-requests-limit: 3
+    assignees:
+      - "wigo4it"
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+    labels:
+      - "github-actions"
+      - "automated"
+    rebase-strategy: "auto"

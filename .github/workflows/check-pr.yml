@@ -1,0 +1,126 @@
+name: Check PR
+
+on:
+  pull_request:
+    branches:
+      - main
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+  pull-requests: write
+  checks: write
+
+jobs:
+  check-conventional-commits:
+    name: Check Conventional Commits
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check commit messages
+        uses: wagoid/commitlint-github-action@v6
+        with:
+          configFile: .commitlintrc.json
+
+  check-semantic-version:
+    name: Check Semantic Version Impact
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install semantic-release
+        run: npm install --no-save semantic-release @semantic-release/changelog @semantic-release/git @semantic-release/github conventional-changelog-conventionalcommits
+
+      - name: Check semantic version impact
+        id: semantic-check
+        run: |
+          # Determine what version would be released
+          npx semantic-release --dry-run --no-ci > semantic-output.txt 2>&1 || true
+          
+          if grep -q "The next release version is" semantic-output.txt; then
+            VERSION=$(grep "The next release version is" semantic-output.txt | sed 's/.*The next release version is \([0-9.]*\).*/\1/')
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+            echo "has-release=true" >> $GITHUB_OUTPUT
+            echo "This PR would trigger release: v$VERSION"
+          else
+            echo "has-release=false" >> $GITHUB_OUTPUT
+            echo "This PR would not trigger a release"
+          fi
+          
+          # Show the semantic-release output for debugging
+          echo "--- Semantic Release Analysis ---"
+          cat semantic-output.txt
+
+      - name: Comment version impact on PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const hasRelease = '${{ steps.semantic-check.outputs.has-release }}' === 'true';
+            const version = '${{ steps.semantic-check.outputs.version }}';
+            
+            let emoji = hasRelease ? '🚀' : '📝';
+            let title = hasRelease ? 'Release Impact' : 'No Release Impact';
+            let message = hasRelease 
+              ? `This PR will trigger a **v${version}** release when merged to main.`
+              : 'This PR will **not** trigger a release when merged to main.';
+            
+            const comment = `## ${emoji} ${title}
+            
+            ${message}
+            
+            ### 📋 Semantic Versioning Guide
+            To ensure proper versioning, use conventional commit messages:
+            
+            - \`fix: description\` → **Patch** release (v1.0.X)
+            - \`feat: description\` → **Minor** release (v1.X.0)
+            - \`feat!: description\` or \`BREAKING CHANGE:\` → **Major** release (vX.0.0)
+            
+            Other prefixes (\`docs:\`, \`chore:\`, \`style:\`, \`test:\`, etc.) won't trigger a release.
+            
+            ${hasRelease ? '✅ Ready for release!' : '⚠️ Consider using `feat:` or `fix:` if this change should be released.'}
+            `;
+            
+            // Check if we already commented
+            const comments = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number
+            });
+            
+            const existingComment = comments.data.find(comment => 
+              comment.user.login === 'github-actions[bot]' && 
+              comment.body.includes('Release Impact')
+            );
+            
+            if (existingComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existingComment.id,
+                body: comment
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: comment
+              });
+            }
