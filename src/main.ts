@@ -11,7 +11,7 @@ import { ActionInputs, Variable } from "./types";
  * @returns ActionInputs The parsed and validated inputs
  * @throws Error if required inputs are missing or invalid
  */
-function getActionInputs(): ActionInputs {
+export function getActionInputs(): ActionInputs {
   const organization = core.getInput("azure-devops-organization", {
     required: true,
   });
