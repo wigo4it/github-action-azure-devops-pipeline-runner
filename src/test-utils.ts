@@ -18,18 +18,18 @@ export function createMockPipelineRun(overrides: Partial<PipelineRun> = {}): Pip
       name: "Test Pipeline",
       revision: 1,
       url: "https://dev.azure.com/test-org/test-project/_apis/pipelines/123",
-      folder: ""
+      folder: "",
     },
     url: "https://dev.azure.com/test-org/test-project/_apis/pipelines/123/runs/456",
     _links: {
       web: {
-        href: "https://dev.azure.com/test-org/test-project/_build/results?buildId=456"
+        href: "https://dev.azure.com/test-org/test-project/_build/results?buildId=456",
       },
       self: {
-        href: "https://dev.azure.com/test-org/test-project/_apis/pipelines/123/runs/456"
-      }
+        href: "https://dev.azure.com/test-org/test-project/_apis/pipelines/123/runs/456",
+      },
     },
-    ...overrides
+    ...overrides,
   };
 }
 
@@ -44,7 +44,7 @@ export function createMockActionInputs(overrides: Partial<ActionInputs> = {}): A
     pipelineParameters: {},
     pipelineVariables: {},
     previewRun: false,
-    ...overrides
+    ...overrides,
   };
 }
 
@@ -53,7 +53,7 @@ export function createMockActionInputs(overrides: Partial<ActionInputs> = {}): A
  */
 export function createMockVariables(variables: Record<string, string | Variable>): Record<string, Variable> {
   const result: Record<string, Variable> = {};
-  
+
   for (const [key, value] of Object.entries(variables)) {
     if (typeof value === "string") {
       result[key] = { value, isSecret: false };
@@ -61,7 +61,7 @@ export function createMockVariables(variables: Record<string, string | Variable>
       result[key] = value;
     }
   }
-  
+
   return result;
 }
 
@@ -72,7 +72,7 @@ export class MockResponse {
   constructor(
     private body: string | object,
     private status: number = 200,
-    private statusText: string = "OK"
+    private statusText: string = "OK",
   ) {}
 
   get ok(): boolean {
@@ -109,10 +109,10 @@ export async function advanceTimersAndFlush(ms: number): Promise<void> {
  */
 export const TEST_CONSTANTS = {
   ORGANIZATION: "test-org",
-  PROJECT: "test-project", 
+  PROJECT: "test-project",
   PIPELINE_ID: "123",
   ACCESS_TOKEN: "test-token-12345",
   RUN_ID: 456,
   IMDS_ENDPOINT: "http://169.254.169.254/metadata/identity/oauth2/token",
-  AZURE_DEVOPS_RESOURCE: "https://app.vssps.visualstudio.com/"
+  AZURE_DEVOPS_RESOURCE: "https://app.vssps.visualstudio.com/",
 } as const;

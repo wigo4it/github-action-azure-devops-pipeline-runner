@@ -1,7 +1,7 @@
 import * as core from "@actions/core";
 import * as auth from "./auth";
 import * as azureDevOps from "./azure-devops";
-import { ActionInputs, PipelineRun } from "./types";
+import {  PipelineRun } from "./types";
 
 // Mock modules
 jest.mock("@actions/core");
@@ -28,21 +28,21 @@ describe("Main Module Functions", () => {
       name: "Test Pipeline",
       revision: 1,
       url: "https://dev.azure.com/test-org/test-project/_apis/pipelines/123",
-      folder: ""
+      folder: "",
     },
     url: "https://dev.azure.com/test-org/test-project/_apis/pipelines/123/runs/456",
     _links: {
       web: {
-        href: "https://dev.azure.com/test-org/test-project/_build/results?buildId=456"
-      }
-    }
+        href: "https://dev.azure.com/test-org/test-project/_build/results?buildId=456",
+      },
+    },
   };
 
   // Mock Azure DevOps client
   const mockClient = {
     runPipeline: jest.fn(),
     validatePipelineAccess: jest.fn(),
-    getPipelineRun: jest.fn()
+    getPipelineRun: jest.fn(),
   };
 
   beforeAll(async () => {
@@ -52,9 +52,9 @@ describe("Main Module Functions", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     // Reset all mocks to their default implementations
-    mockCore.getInput.mockImplementation((name: string, options?: any) => {
+    mockCore.getInput.mockImplementation((name: string) => {
       const inputs: Record<string, string> = {
         "azure-devops-organization": "test-org",
         "azure-devops-project": "test-project",
@@ -65,14 +65,14 @@ describe("Main Module Functions", () => {
       };
       return inputs[name] || "";
     });
-    
+
     mockCore.getBooleanInput.mockImplementation((name: string) => {
       return name === "preview-run" ? false : false;
     });
 
     mockAuth.validateManagedIdentityAvailability.mockResolvedValue(true);
     mockAuth.getManagedIdentityToken.mockResolvedValue("test-token-12345");
-    
+
     mockAzureDevOps.createAzureDevOpsClient.mockReturnValue(mockClient as any);
     mockClient.validatePipelineAccess.mockResolvedValue(true);
     mockClient.runPipeline.mockResolvedValue(mockPipelineRun);
@@ -90,7 +90,7 @@ describe("Main Module Functions", () => {
 
       // Act & Assert
       expect(() => mainModule.getActionInputs()).toThrow(
-        "Invalid organization name"
+        "Invalid organization name",
       );
     });
 
@@ -105,7 +105,7 @@ describe("Main Module Functions", () => {
 
       // Act & Assert
       expect(() => mainModule.getActionInputs()).toThrow(
-        "Pipeline ID must be a numeric value"
+        "Pipeline ID must be a numeric value",
       );
     });
 
@@ -121,7 +121,7 @@ describe("Main Module Functions", () => {
 
       // Act & Assert
       expect(() => mainModule.getActionInputs()).toThrow(
-        "Invalid pipeline-parameters JSON"
+        "Invalid pipeline-parameters JSON",
       );
     });
 
@@ -138,7 +138,7 @@ describe("Main Module Functions", () => {
 
       // Act & Assert
       expect(() => mainModule.getActionInputs()).toThrow(
-        "Invalid pipeline-variables JSON"
+        "Invalid pipeline-variables JSON",
       );
     });
 
@@ -146,7 +146,7 @@ describe("Main Module Functions", () => {
       // Arrange
       mockCore.getInput.mockImplementation((name: string) => {
         if (name === "azure-devops-organization") return "test-org";
-        if (name === "azure-devops-project") return "test-project";  
+        if (name === "azure-devops-project") return "test-project";
         if (name === "pipeline-id") return "123";
         if (name === "pipeline-parameters") return "{}";
         if (name === "pipeline-variables") return '{"env": "prod", "debug": {"value": "true", "isSecret": false}}';
@@ -159,7 +159,7 @@ describe("Main Module Functions", () => {
       // Assert
       expect(inputs.pipelineVariables).toEqual({
         env: { value: "prod", isSecret: false },
-        debug: { value: "true", isSecret: false }
+        debug: { value: "true", isSecret: false },
       });
     });
 
@@ -175,7 +175,7 @@ describe("Main Module Functions", () => {
         pipelineParameters: {},
         pipelineVariables: {},
         previewRun: false,
-        branch: undefined
+        branch: undefined,
       });
     });
 

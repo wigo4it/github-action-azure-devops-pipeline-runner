@@ -15,7 +15,7 @@ class MockResponse {
   constructor(
     private body: string | object,
     private status: number = 200,
-    private statusText: string = "OK"
+    private statusText: string = "OK",
   ) {}
 
   get ok(): boolean {
@@ -62,17 +62,17 @@ describe("Azure DevOps Client", () => {
         name: "Test Pipeline",
         revision: 1,
         url: "https://dev.azure.com/test-org/test-project/_apis/pipelines/123",
-        folder: ""
+        folder: "",
       },
       url: "https://dev.azure.com/test-org/test-project/_apis/pipelines/123/runs/456",
       _links: {
         web: {
-          href: "https://dev.azure.com/test-org/test-project/_build/results?buildId=456"
+          href: "https://dev.azure.com/test-org/test-project/_build/results?buildId=456",
         },
         self: {
-          href: "https://dev.azure.com/test-org/test-project/_apis/pipelines/123/runs/456"
-        }
-      }
+          href: "https://dev.azure.com/test-org/test-project/_apis/pipelines/123/runs/456",
+        },
+      },
     };
 
     const basicInputs: ActionInputs = {
@@ -81,7 +81,7 @@ describe("Azure DevOps Client", () => {
       pipelineId,
       pipelineParameters: {},
       pipelineVariables: {},
-      previewRun: false
+      previewRun: false,
     };
 
     it("should successfully run a pipeline with basic parameters", async () => {
@@ -101,17 +101,17 @@ describe("Azure DevOps Client", () => {
           headers: {
             Authorization: `Bearer ${accessToken}`,
             "Content-Type": "application/json",
-            Accept: "application/json"
+            Accept: "application/json",
           },
           body: JSON.stringify({
             previewRun: false,
             templateParameters: {},
-            variables: {}
-          })
-        }
+            variables: {},
+          }),
+        },
       );
       expect(mockCore.info).toHaveBeenCalledWith(
-        "Successfully started pipeline run with ID: 456"
+        "Successfully started pipeline run with ID: 456",
       );
     });
 
@@ -122,8 +122,8 @@ describe("Azure DevOps Client", () => {
         pipelineParameters: { environment: "production", version: "1.0.0" },
         pipelineVariables: {
           deploymentTarget: { value: "prod", isSecret: false },
-          apiKey: { value: "secret-key", isSecret: true }
-        }
+          apiKey: { value: "secret-key", isSecret: true },
+        },
       };
 
       const mockResponse = new MockResponse(mockPipelineRun, 200);
@@ -142,10 +142,10 @@ describe("Azure DevOps Client", () => {
             templateParameters: { environment: "production", version: "1.0.0" },
             variables: {
               deploymentTarget: { value: "prod", isSecret: false },
-              apiKey: { value: "secret-key", isSecret: true }
-            }
-          })
-        })
+              apiKey: { value: "secret-key", isSecret: true },
+            },
+          }),
+        }),
       );
     });
 
@@ -153,7 +153,7 @@ describe("Azure DevOps Client", () => {
       // Arrange
       const inputsWithBranch: ActionInputs = {
         ...basicInputs,
-        branch: "refs/heads/feature/new-feature"
+        branch: "refs/heads/feature/new-feature",
       };
 
       const mockResponse = new MockResponse(mockPipelineRun, 200);
@@ -161,6 +161,7 @@ describe("Azure DevOps Client", () => {
 
       // Act
       const result = await client.runPipeline(inputsWithBranch);
+      console.log(result);
 
       // Assert
       expect(mockFetch).toHaveBeenCalledWith(
@@ -173,12 +174,12 @@ describe("Azure DevOps Client", () => {
             resources: {
               repositories: {
                 self: {
-                  refName: "refs/heads/feature/new-feature"
-                }
-              }
-            }
-          })
-        })
+                  refName: "refs/heads/feature/new-feature",
+                },
+              },
+            },
+          }),
+        }),
       );
     });
 
@@ -186,7 +187,7 @@ describe("Azure DevOps Client", () => {
       // Arrange
       const previewInputs: ActionInputs = {
         ...basicInputs,
-        previewRun: true
+        previewRun: true,
       };
 
       const mockResponse = new MockResponse(mockPipelineRun, 200);
@@ -194,6 +195,7 @@ describe("Azure DevOps Client", () => {
 
       // Act
       const result = await client.runPipeline(previewInputs);
+      console.log(result);
 
       // Assert
       expect(mockFetch).toHaveBeenCalledWith(
@@ -202,12 +204,12 @@ describe("Azure DevOps Client", () => {
           body: JSON.stringify({
             previewRun: true,
             templateParameters: {},
-            variables: {}
-          })
-        })
+            variables: {},
+          }),
+        }),
       );
       expect(mockCore.info).toHaveBeenCalledWith(
-        "Successfully previewed pipeline run with ID: 456"
+        "Successfully previewed pipeline run with ID: 456",
       );
     });
 
@@ -219,17 +221,17 @@ describe("Azure DevOps Client", () => {
         typeName: "Microsoft.TeamFoundation.Core.WebApi.PipelineNotFoundException",
         typeKey: "PipelineNotFoundException",
         errorCode: 404,
-        eventId: 3000
+        eventId: 3000,
       };
       const mockResponse = new MockResponse(errorResponse, 404, "Not Found");
       mockFetch.mockResolvedValueOnce(mockResponse as any);
 
       // Act & Assert
       await expect(client.runPipeline(basicInputs)).rejects.toThrow(
-        "Failed to run pipeline: Azure DevOps API request failed with status 404: Pipeline not found"
+        "Failed to run pipeline: Azure DevOps API request failed with status 404: Pipeline not found",
       );
       expect(mockCore.error).toHaveBeenCalledWith(
-        "Azure DevOps API request failed with status 404: Pipeline not found"
+        "Azure DevOps API request failed with status 404: Pipeline not found",
       );
     });
 
@@ -240,7 +242,7 @@ describe("Azure DevOps Client", () => {
 
       // Act & Assert
       await expect(client.runPipeline(basicInputs)).rejects.toThrow(
-        "Failed to run pipeline: Azure DevOps API request failed with status 401: Unauthorized access"
+        "Failed to run pipeline: Azure DevOps API request failed with status 401: Unauthorized access",
       );
     });
 
@@ -251,10 +253,10 @@ describe("Azure DevOps Client", () => {
 
       // Act & Assert
       await expect(client.runPipeline(basicInputs)).rejects.toThrow(
-        "Failed to run pipeline: Network connection failed"
+        "Failed to run pipeline: Network connection failed",
       );
       expect(mockCore.error).toHaveBeenCalledWith(
-        "Failed to run pipeline: Network connection failed"
+        "Failed to run pipeline: Network connection failed",
       );
     });
 
@@ -265,7 +267,7 @@ describe("Azure DevOps Client", () => {
 
       // Act & Assert
       await expect(client.runPipeline(basicInputs)).rejects.toThrow(
-        "Failed to run pipeline:"
+        "Failed to run pipeline:",
       );
     });
   });
@@ -284,9 +286,9 @@ describe("Azure DevOps Client", () => {
         name: "Test Pipeline",
         revision: 1,
         url: "https://dev.azure.com/test-org/test-project/_apis/pipelines/123",
-        folder: ""
+        folder: "",
       },
-      url: "https://dev.azure.com/test-org/test-project/_apis/pipelines/123/runs/456"
+      url: "https://dev.azure.com/test-org/test-project/_apis/pipelines/123/runs/456",
     };
 
     it("should successfully get pipeline run details", async () => {
@@ -305,9 +307,9 @@ describe("Azure DevOps Client", () => {
           method: "GET",
           headers: {
             Authorization: `Bearer ${accessToken}`,
-            Accept: "application/json"
-          }
-        }
+            Accept: "application/json",
+          },
+        },
       );
     });
 
@@ -318,10 +320,10 @@ describe("Azure DevOps Client", () => {
 
       // Act & Assert
       await expect(client.getPipelineRun(project, pipelineId, runId)).rejects.toThrow(
-        "Failed to get pipeline run: Failed to get pipeline run: 404 Not Found"
+        "Failed to get pipeline run: Failed to get pipeline run: 404 Not Found",
       );
       expect(mockCore.error).toHaveBeenCalledWith(
-        "Failed to get pipeline run: Failed to get pipeline run: 404 Not Found"
+        "Failed to get pipeline run: Failed to get pipeline run: 404 Not Found",
       );
     });
 
@@ -332,7 +334,7 @@ describe("Azure DevOps Client", () => {
 
       // Act & Assert
       await expect(client.getPipelineRun(project, pipelineId, runId)).rejects.toThrow(
-        "Failed to get pipeline run: Connection timeout"
+        "Failed to get pipeline run: Connection timeout",
       );
     });
   });
@@ -344,7 +346,7 @@ describe("Azure DevOps Client", () => {
         id: 123,
         name: "Test Pipeline",
         folder: "",
-        revision: 1
+        revision: 1,
       };
       const mockResponse = new MockResponse(mockPipeline, 200);
       mockFetch.mockResolvedValueOnce(mockResponse as any);
@@ -360,9 +362,9 @@ describe("Azure DevOps Client", () => {
           method: "GET",
           headers: {
             Authorization: `Bearer ${accessToken}`,
-            Accept: "application/json"
-          }
-        }
+            Accept: "application/json",
+          },
+        },
       );
     });
 
@@ -389,7 +391,7 @@ describe("Azure DevOps Client", () => {
       // Assert
       expect(hasAccess).toBe(false);
       expect(mockCore.debug).toHaveBeenCalledWith(
-        "Pipeline validation failed: Network error"
+        "Pipeline validation failed: Network error",
       );
     });
 

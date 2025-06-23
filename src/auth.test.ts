@@ -15,7 +15,7 @@ class MockResponse {
   constructor(
     private body: string | object,
     private status: number = 200,
-    private statusText: string = "OK"
+    private statusText: string = "OK",
   ) {}
 
   get ok(): boolean {
@@ -65,7 +65,7 @@ describe("Authentication Module", () => {
             Metadata: "true",
           },
           signal: expect.any(AbortSignal),
-        }
+        },
       );
       expect(mockCore.debug).toHaveBeenCalledWith("Attempting to acquire Managed Identity token...");
       expect(mockCore.debug).toHaveBeenCalledWith("Successfully acquired Managed Identity token");
@@ -73,7 +73,7 @@ describe("Authentication Module", () => {
       // Arrange
       const networkError = new Error("Network error");
       const mockResponse = new MockResponse(mockTokenResponse, 200);
-      
+
       mockFetch
         .mockRejectedValueOnce(networkError)
         .mockResolvedValueOnce(mockResponse as any);
@@ -85,7 +85,7 @@ describe("Authentication Module", () => {
       expect(token).toBe("test-access-token-12345");
       expect(mockFetch).toHaveBeenCalledTimes(2);
       expect(mockCore.warning).toHaveBeenCalledWith(
-        "Token acquisition attempt 1 failed: Network error"
+        "Token acquisition attempt 1 failed: Network error",
       );
       expect(mockCore.debug).toHaveBeenCalledWith("Retrying in 1000ms...");
     });    it("should handle HTTP error response", async () => {
@@ -95,10 +95,10 @@ describe("Authentication Module", () => {
 
       // Act & Assert
       await expect(getManagedIdentityToken()).rejects.toThrow(
-        "Failed to acquire Managed Identity token after 3 attempts"
+        "Failed to acquire Managed Identity token after 3 attempts",
       );
       expect(mockCore.error).toHaveBeenCalledWith(
-        expect.stringContaining("Failed to acquire Managed Identity token after 3 attempts")
+        expect.stringContaining("Failed to acquire Managed Identity token after 3 attempts"),
       );
     });    it("should handle response without access token", async () => {
       // Arrange
@@ -107,7 +107,7 @@ describe("Authentication Module", () => {
 
       // Act & Assert
       await expect(getManagedIdentityToken()).rejects.toThrow(
-        "Failed to acquire Managed Identity token after 3 attempts"
+        "Failed to acquire Managed Identity token after 3 attempts",
       );
     });    it("should handle request timeout", async () => {
       // Arrange
@@ -117,7 +117,7 @@ describe("Authentication Module", () => {
 
       // Act & Assert
       await expect(getManagedIdentityToken()).rejects.toThrow(
-        "Failed to acquire Managed Identity token after 3 attempts"
+        "Failed to acquire Managed Identity token after 3 attempts",
       );
     });    it("should fail after maximum retry attempts", async () => {
       // Arrange
@@ -126,7 +126,7 @@ describe("Authentication Module", () => {
 
       // Act & Assert
       await expect(getManagedIdentityToken()).rejects.toThrow(
-        "Failed to acquire Managed Identity token after 3 attempts"
+        "Failed to acquire Managed Identity token after 3 attempts",
       );
       expect(mockFetch).toHaveBeenCalledTimes(3);
     });    it("should handle malformed JSON response", async () => {
@@ -136,7 +136,7 @@ describe("Authentication Module", () => {
 
       // Act & Assert
       await expect(getManagedIdentityToken()).rejects.toThrow(
-        "Failed to acquire Managed Identity token after 3 attempts"
+        "Failed to acquire Managed Identity token after 3 attempts",
       );
     });
   });
@@ -160,7 +160,7 @@ describe("Authentication Module", () => {
             Metadata: "true",
           },
           signal: expect.any(AbortSignal),
-        }
+        },
       );
       expect(mockCore.debug).toHaveBeenCalledWith("Validating Managed Identity availability...");
       expect(mockCore.debug).toHaveBeenCalledWith("Managed Identity availability: true");
@@ -190,7 +190,7 @@ describe("Authentication Module", () => {
       // Assert
       expect(isAvailable).toBe(false);
       expect(mockCore.debug).toHaveBeenCalledWith(
-        "Managed Identity not available: Connection refused"
+        "Managed Identity not available: Connection refused",
       );
     });
 
@@ -206,7 +206,7 @@ describe("Authentication Module", () => {
       // Assert
       expect(isAvailable).toBe(false);
       expect(mockCore.debug).toHaveBeenCalledWith(
-        "Managed Identity not available: Request timeout"
+        "Managed Identity not available: Request timeout",
       );
     });
 
@@ -220,7 +220,7 @@ describe("Authentication Module", () => {
       // Assert
       expect(isAvailable).toBe(false);
       expect(mockCore.debug).toHaveBeenCalledWith(
-        "Managed Identity not available: String error"
+        "Managed Identity not available: String error",
       );
     });
   });
