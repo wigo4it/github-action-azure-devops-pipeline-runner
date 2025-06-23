@@ -228,6 +228,10 @@ jobs:
         with:
           name: build-artifacts
 
+      - name: Get node version
+        run: node -v
+
+
       - name: Validate action.yml
         run: |
           if [ ! -f "action.yml" ]; then
@@ -241,7 +245,7 @@ jobs:
             exit 1
           fi
           
-          if ! grep -q "using: 'node22'" action.yml; then
+          if ! grep -q "using: 'node20'" action.yml; then
             echo "::error::action.yml should use 'node20'"
             exit 1
           fi
