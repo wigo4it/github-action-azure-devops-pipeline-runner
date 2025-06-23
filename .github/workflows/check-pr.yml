@@ -19,12 +19,12 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: wigo4itnl-tooling/checkout@v4
         with:
           fetch-depth: 0
 
       - name: Check commit messages
-        uses: wagoid/commitlint-github-action@v6
+        uses: wigo4itnl-tooling/commitlint-github-action@v6
         with:
           configFile: .commitlintrc.json
 
@@ -35,12 +35,12 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: wigo4itnl-tooling/checkout@v4
         with:
           fetch-depth: 0
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: wigo4itnl-tooling/setup-node@v4
         with:
           node-version: '22'
           cache: 'npm'
@@ -69,7 +69,7 @@ jobs:
           cat semantic-output.txt
 
       - name: Comment version impact on PR
-        uses: actions/github-script@v7
+        uses: wigo4itnl-tooling/github-script@v7
         with:
           script: |
             const hasRelease = '${{ steps.semantic-check.outputs.has-release }}' === 'true';
