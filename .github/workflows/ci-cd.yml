@@ -15,7 +15,6 @@ permissions:
   checks: write
 
 jobs:
-  # Job that runs on all pull requests and main branch pushes
   test-and-build:
     name: Test and Build
     runs-on: ubuntu-latest
