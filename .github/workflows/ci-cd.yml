@@ -246,7 +246,7 @@ jobs:
             exit 1
           fi
           
-          if ! grep -q "main: 'dist/index.js'" action.yml; then
+          if ! grep -q "using: 'node20' main: 'dist/index.js'" action.yml; then
             echo "::error::action.yml should reference 'dist/index.js'"
             exit 1
           fi
