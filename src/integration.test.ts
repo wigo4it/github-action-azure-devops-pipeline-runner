@@ -171,10 +171,13 @@ describe("Integration Tests", () => {
       });
     });
   });
-
   describe("Error Handling Integration", () => {
     it("should provide clear error messages for common validation failures", () => {
-      const testCases = [
+      const testCases: Array<{
+        description: string;
+        mockInputs: Record<string, string>;
+        expectedError: string;
+      }> = [
         {
           description: "invalid organization format",
           mockInputs: { "azure-devops-organization": "org-name-" },
