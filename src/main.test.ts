@@ -9,7 +9,7 @@ const mockCore = core as jest.Mocked<typeof core>;
 describe("Main Module Functions", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     // Default mock implementations
     mockCore.getInput.mockImplementation((name: string) => {
       const inputs: Record<string, string> = {
@@ -22,7 +22,7 @@ describe("Main Module Functions", () => {
       };
       return inputs[name] || "";
     });
-    
+
     mockCore.getBooleanInput.mockReturnValue(false);
   });
 
@@ -39,7 +39,7 @@ describe("Main Module Functions", () => {
         pipelineParameters: {},
         pipelineVariables: {},
         previewRun: false,
-        branch: undefined
+        branch: undefined,
       });
     });
 
@@ -54,7 +54,7 @@ describe("Main Module Functions", () => {
 
       // Act & Assert
       expect(() => getActionInputs()).toThrow(
-        "Invalid organization name"
+        "Invalid organization name",
       );
     });
 
@@ -69,7 +69,7 @@ describe("Main Module Functions", () => {
 
       // Act & Assert
       expect(() => getActionInputs()).toThrow(
-        "Pipeline ID must be a numeric value"
+        "Pipeline ID must be a numeric value",
       );
     });
 
@@ -85,7 +85,7 @@ describe("Main Module Functions", () => {
 
       // Act & Assert
       expect(() => getActionInputs()).toThrow(
-        "Invalid pipeline-parameters JSON"
+        "Invalid pipeline-parameters JSON",
       );
     });
 
@@ -102,7 +102,7 @@ describe("Main Module Functions", () => {
 
       // Act & Assert
       expect(() => getActionInputs()).toThrow(
-        "Invalid pipeline-variables JSON"
+        "Invalid pipeline-variables JSON",
       );
     });
 
@@ -110,7 +110,7 @@ describe("Main Module Functions", () => {
       // Arrange
       mockCore.getInput.mockImplementation((name: string) => {
         if (name === "azure-devops-organization") return "test-org";
-        if (name === "azure-devops-project") return "test-project";  
+        if (name === "azure-devops-project") return "test-project";
         if (name === "pipeline-id") return "123";
         if (name === "pipeline-parameters") return "{}";
         if (name === "pipeline-variables") return '{"env": "prod", "debug": {"value": "true", "isSecret": false}}';
@@ -123,7 +123,7 @@ describe("Main Module Functions", () => {
       // Assert
       expect(inputs.pipelineVariables).toEqual({
         env: { value: "prod", isSecret: false },
-        debug: { value: "true", isSecret: false }
+        debug: { value: "true", isSecret: false },
       });
     });
 
@@ -177,7 +177,7 @@ describe("Main Module Functions", () => {
       expect(inputs.pipelineParameters).toEqual({
         environment: "production",
         version: "1.0.0",
-        deployAll: true
+        deployAll: true,
       });
     });
 
@@ -191,7 +191,7 @@ describe("Main Module Functions", () => {
         if (name === "pipeline-variables") return JSON.stringify({
           simpleVar: "value1",
           secretVar: { value: "secret123", isSecret: true },
-          normalVar: { value: "normal", isSecret: false }
+          normalVar: { value: "normal", isSecret: false },
         });
         return "";
       });
@@ -203,7 +203,7 @@ describe("Main Module Functions", () => {
       expect(inputs.pipelineVariables).toEqual({
         simpleVar: { value: "value1", isSecret: false },
         secretVar: { value: "secret123", isSecret: true },
-        normalVar: { value: "normal", isSecret: false }
+        normalVar: { value: "normal", isSecret: false },
       });
     });
   });

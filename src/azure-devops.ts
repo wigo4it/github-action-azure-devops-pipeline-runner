@@ -37,7 +37,7 @@ export class AzureDevOpsClient {
     } = inputs;
 
     core.debug(
-      `Starting pipeline run for pipeline ${pipelineId} in project ${project}`
+      `Starting pipeline run for pipeline ${pipelineId} in project ${project}`,
     );
 
     const url = `${this.baseUrl}/${project}/_apis/pipelines/${pipelineId}/runs?api-version=${this.apiVersion}`;
@@ -95,10 +95,10 @@ export class AzureDevOpsClient {
       core.info(
         `Successfully ${
           previewRun ? "previewed" : "started"
-        } pipeline run with ID: ${pipelineRun.id}`
+        } pipeline run with ID: ${pipelineRun.id}`,
       );
       core.debug(
-        `Pipeline run details: ${JSON.stringify(pipelineRun, null, 2)}`
+        `Pipeline run details: ${JSON.stringify(pipelineRun, null, 2)}`,
       );
 
       return pipelineRun;
@@ -120,7 +120,7 @@ export class AzureDevOpsClient {
   async getPipelineRun(
     project: string,
     pipelineId: string,
-    runId: number
+    runId: number,
   ): Promise<PipelineRun> {
     const url = `${this.baseUrl}/${project}/_apis/pipelines/${pipelineId}/runs/${runId}?api-version=${this.apiVersion}`;
 
@@ -135,7 +135,7 @@ export class AzureDevOpsClient {
 
       if (!response.ok) {
         throw new Error(
-          `Failed to get pipeline run: ${response.status} ${response.statusText}`
+          `Failed to get pipeline run: ${response.status} ${response.statusText}`,
         );
       }
 
@@ -157,7 +157,7 @@ export class AzureDevOpsClient {
    */
   async validatePipelineAccess(
     project: string,
-    pipelineId: string
+    pipelineId: string,
   ): Promise<boolean> {
     const url = `${this.baseUrl}/${project}/_apis/pipelines/${pipelineId}?api-version=${this.apiVersion}`;
 
@@ -175,7 +175,7 @@ export class AzureDevOpsClient {
       core.debug(
         `Pipeline validation failed: ${
           error instanceof Error ? error.message : String(error)
-        }`
+        }`,
       );
       return false;
     }
@@ -190,7 +190,7 @@ export class AzureDevOpsClient {
  */
 export function createAzureDevOpsClient(
   organization: string,
-  accessToken: string
+  accessToken: string,
 ): AzureDevOpsClient {
   return new AzureDevOpsClient(organization, accessToken);
 }

@@ -25,7 +25,7 @@ export function getActionInputs(): ActionInputs {
   // Validate organization name
   if (!/^[a-zA-Z0-9][\w.-]*[a-zA-Z0-9]$/.test(organization)) {
     throw new Error(
-      "Invalid organization name. Organization names must start and end with alphanumeric characters."
+      "Invalid organization name. Organization names must start and end with alphanumeric characters.",
     );
   }
 
@@ -45,7 +45,7 @@ export function getActionInputs(): ActionInputs {
     throw new Error(
       `Invalid pipeline-parameters JSON: ${
         error instanceof Error ? error.message : String(error)
-      }`
+      }`,
     );
   }
 
@@ -75,7 +75,7 @@ export function getActionInputs(): ActionInputs {
     throw new Error(
       `Invalid pipeline-variables JSON: ${
         error instanceof Error ? error.message : String(error)
-      }`
+      }`,
     );
   }
 
@@ -113,7 +113,7 @@ async function run(): Promise<void> {
       await validateManagedIdentityAvailability();
     if (!isManagedIdentityAvailable) {
       throw new Error(
-        "Managed Identity is not available. This action must run on a self-hosted runner with Managed Identity enabled."
+        "Managed Identity is not available. This action must run on a self-hosted runner with Managed Identity enabled.",
       );
     }
 
@@ -127,26 +127,26 @@ async function run(): Promise<void> {
     // Create Azure DevOps client
     const azureDevOpsClient = createAzureDevOpsClient(
       inputs.organization,
-      accessToken
+      accessToken,
     );
 
     // Validate pipeline access
     core.info("Validating pipeline access...");
     const hasAccess = await azureDevOpsClient.validatePipelineAccess(
       inputs.project,
-      inputs.pipelineId
+      inputs.pipelineId,
     );
     if (!hasAccess) {
       throw new Error(
         `Cannot access pipeline ${inputs.pipelineId} in project ${inputs.project}. ` +
-          "Please check that the pipeline exists and the Managed Identity has the required permissions."
+          "Please check that the pipeline exists and the Managed Identity has the required permissions.",
       );
     }
     core.info("Pipeline access validated successfully");
 
     // Run the pipeline
     core.info(
-      `${inputs.previewRun ? "Previewing" : "Starting"} pipeline run...`
+      `${inputs.previewRun ? "Previewing" : "Starting"} pipeline run...`,
     );
     const pipelineRun = await azureDevOpsClient.runPipeline(inputs);
 
@@ -164,7 +164,7 @@ async function run(): Promise<void> {
     core.info(
       `✅ Pipeline run ${
         inputs.previewRun ? "preview" : "execution"
-      } completed successfully!`
+      } completed successfully!`,
     );
     core.info(`Run ID: ${pipelineRun.id}`);
     core.info(`Run Name: ${pipelineRun.name}`);

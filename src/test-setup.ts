@@ -5,4 +5,4 @@
 jest.setTimeout(10000);
 
 // Mock node-fetch to avoid ESM issues
-jest.mock('node-fetch');
+jest.mock("node-fetch");

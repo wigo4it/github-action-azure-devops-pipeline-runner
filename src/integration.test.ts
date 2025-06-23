@@ -1,8 +1,6 @@
 import * as core from "@actions/core";
-import * as auth from "./auth";
 import * as azureDevOps from "./azure-devops";
 import { getActionInputs } from "./main";
-import { ActionInputs, PipelineRun } from "./types";
 
 // Integration tests that test the components working together
 // These tests use real objects but mock external dependencies
@@ -16,7 +14,7 @@ const mockCore = core as jest.Mocked<typeof core>;
 describe("Integration Tests", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     // Set up default mock inputs
     mockCore.getInput.mockImplementation((name: string) => {
       const inputs: Record<string, string> = {
@@ -29,7 +27,7 @@ describe("Integration Tests", () => {
       };
       return inputs[name] || "";
     });
-    
+
     mockCore.getBooleanInput.mockReturnValue(false);
   });
 
@@ -45,14 +43,14 @@ describe("Integration Tests", () => {
         pipelineId: "123",
         pipelineParameters: {
           environment: "production",
-          version: "1.0.0"
+          version: "1.0.0",
         },
         pipelineVariables: {
           deploymentTarget: { value: "prod", isSecret: false },
-          apiKey: { value: "secret123", isSecret: true }
+          apiKey: { value: "secret123", isSecret: true },
         },
         branch: "refs/heads/main",
-        previewRun: false
+        previewRun: false,
       });
     });
 
@@ -78,7 +76,7 @@ describe("Integration Tests", () => {
 
       // Act & Assert
       expect(() => getActionInputs()).toThrow(
-        "Invalid organization name. Organization names must start and end with alphanumeric characters."
+        "Invalid organization name. Organization names must start and end with alphanumeric characters.",
       );
     });
   });
@@ -115,11 +113,11 @@ describe("Integration Tests", () => {
       expect(inputs.organization).toBe("test-org");
       expect(inputs.pipelineParameters).toEqual({
         environment: "production",
-        version: "1.0.0"
+        version: "1.0.0",
       });
       expect(inputs.pipelineVariables).toEqual({
         deploymentTarget: { value: "prod", isSecret: false },
-        apiKey: { value: "secret123", isSecret: true }
+        apiKey: { value: "secret123", isSecret: true },
       });
       expect(client).toBeInstanceOf(azureDevOps.AzureDevOpsClient);
     });
@@ -169,7 +167,7 @@ describe("Integration Tests", () => {
       expect(inputs.pipelineParameters).toEqual({
         timeout: 300,
         parallel: true,
-        maxRetries: 3
+        maxRetries: 3,
       });
     });
   });
@@ -180,31 +178,33 @@ describe("Integration Tests", () => {
         {
           description: "invalid organization format",
           mockInputs: { "azure-devops-organization": "org-name-" },
-          expectedError: "Invalid organization name"
+          expectedError: "Invalid organization name",
         },
         {
           description: "non-numeric pipeline ID",
           mockInputs: { "pipeline-id": "abc123" },
-          expectedError: "Pipeline ID must be a numeric value"
+          expectedError: "Pipeline ID must be a numeric value",
         },
         {
           description: "malformed JSON parameters",
           mockInputs: { "pipeline-parameters": "{invalid json}" },
-          expectedError: "Invalid pipeline-parameters JSON"
+          expectedError: "Invalid pipeline-parameters JSON",
         },
         {
           description: "malformed JSON variables",
           mockInputs: { "pipeline-variables": "{invalid: json}" },
-          expectedError: "Invalid pipeline-variables JSON"
-        }
+          expectedError: "Invalid pipeline-variables JSON",
+        },
       ];
 
       testCases.forEach(({ description, mockInputs, expectedError }) => {
+        console.log(`Running test case: ${description}`);
+
         // Arrange
         mockCore.getInput.mockImplementation((name: string) => {
           const defaults: Record<string, string> = {
             "azure-devops-organization": "test-org",
-            "azure-devops-project": "test-project", 
+            "azure-devops-project": "test-project",
             "pipeline-id": "123",
             "pipeline-parameters": "{}",
             "pipeline-variables": "{}",

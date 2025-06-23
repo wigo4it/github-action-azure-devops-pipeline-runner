@@ -57,7 +57,7 @@ export async function getManagedIdentityToken(): Promise<string> {
         if (!response.ok) {
           const errorText = await response.text();
           throw new Error(
-            `IMDS request failed with status ${response.status}: ${errorText}`
+            `IMDS request failed with status ${response.status}: ${errorText}`,
           );
         }
 
@@ -76,7 +76,7 @@ export async function getManagedIdentityToken(): Promise<string> {
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error));
       core.warning(
-        `Token acquisition attempt ${attempt} failed: ${lastError.message}`
+        `Token acquisition attempt ${attempt} failed: ${lastError.message}`,
       );
 
       if (attempt < MAX_RETRY_ATTEMPTS) {
@@ -113,7 +113,7 @@ export async function validateManagedIdentityAvailability(): Promise<boolean> {
             Metadata: "true",
           },
           signal: controller.signal,
-        }
+        },
       );
 
       clearTimeout(timeoutId);
@@ -128,7 +128,7 @@ export async function validateManagedIdentityAvailability(): Promise<boolean> {
     core.debug(
       `Managed Identity not available: ${
         error instanceof Error ? error.message : String(error)
-      }`
+      }`,
     );
     return false;
   }
