@@ -63,6 +63,7 @@ jobs:
             coverage/
           retention-days: 30
 
+  # Job that only runs when code is pushed to main (after PR merge)
   release:
     name: Release
     runs-on: ubuntu-latest
@@ -226,10 +227,6 @@ jobs:
         with:
           name: build-artifacts
 
-      - name: Get node version
-        run: node -v
-
-
       - name: Validate action.yml
         run: |
           if [ ! -f "action.yml" ]; then
@@ -243,7 +240,12 @@ jobs:
             exit 1
           fi
           
-          if ! grep -q "main: 'dist/index.js'" action.yml; then
+          if ! grep -q "using: \"node20\"" action.yml; then
+            echo "::error::action.yml should use 'node20'"
+            exit 1
+          fi
+          
+          if ! grep -q "main: \"dist/index.js\"" action.yml; then
             echo "::error::action.yml should reference 'dist/index.js'"
             exit 1
           fi
