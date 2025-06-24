@@ -63,7 +63,6 @@ jobs:
             coverage/
           retention-days: 30
 
-  # Job that only runs when code is pushed to main (after PR merge)
   release:
     name: Release
     runs-on: ubuntu-latest
