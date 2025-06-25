@@ -128,6 +128,11 @@ jobs:
           npm run build
           npm run package
 
+      - name: Configure git
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+
       - name: Create distribution archive
         if: steps.semantic-version.outputs.should-release == 'true'
         run: |
