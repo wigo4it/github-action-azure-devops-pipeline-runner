@@ -123,6 +123,13 @@ jobs:
           npm run build
           npm run package
 
+      - name: Create distribution archive
+        if: steps.semantic-version.outputs.should-release == 'true'
+        run: |
+          tar -czf dist.tar.gz -C dist .
+          echo "Created dist.tar.gz with contents:"
+          tar -tzf dist.tar.gz | head -10
+
       - name: Commit updated dist/
         if: steps.semantic-version.outputs.should-release == 'true'
         run: |
@@ -163,7 +170,21 @@ jobs:
                   "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
                 }
               ],
-              "@semantic-release/github"
+              [
+                "@semantic-release/github",
+                {
+                  "assets": [
+                    {
+                      "path": "dist/**/*",
+                      "label": "Distribution files"
+                    },
+                    {
+                      "path": "dist.tar.gz",
+                      "label": "Distribution archive"
+                    }
+                  ]
+                }
+              ]
             ]
           }
           EOF
