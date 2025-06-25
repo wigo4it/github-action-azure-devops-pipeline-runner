@@ -138,7 +138,7 @@ jobs:
       - name: Commit updated dist/
         if: steps.semantic-version.outputs.should-release == 'true'
         run: |
-          git add dist/
+          git add dist/ -f
           if ! git diff --staged --quiet; then
             git commit -m "chore: update dist/ for v${{ steps.semantic-version.outputs.version }}"
             git push
