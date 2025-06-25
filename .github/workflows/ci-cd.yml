@@ -24,7 +24,7 @@ jobs:
       - name: Checkout code
         uses: wigo4itnl-tooling/checkout@v4
         with:
-          fetch-depth: 0 # Needed for semantic versioning
+          fetch-depth: 0 # Needed for GitVersion
 
       - name: Setup Node.js
         uses: wigo4itnl-tooling/setup-node@v4
@@ -92,32 +92,34 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Determine semantic version
+      - name: Setup GitVersion
+        uses: wigo4itnl-tooling/gittools-actions/gitversion/setup@v1.1.1
+        with:
+          versionSpec: '5.x'
+
+      - name: Determine version with GitVersion
+        id: gitversion
+        uses: wigo4itnl-tooling/gittools-actions/gitversion/execute@v1.1.1
+        with:
+          useConfigFile: true
+          configFilePath: GitVersion.yml
+
+      - name: Set version outputs
         id: semantic-version
         run: |
-          # Install semantic-release dependencies
-          npm install --no-save semantic-release @semantic-release/changelog @semantic-release/git @semantic-release/github
-
-          # Configure git
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-
-          # Check if there are any releasable changes
-          npx semantic-release
-
-          # Check if there are any releasable changes
-          npx semantic-release --dry-run > semantic-release-output.txt 2>&1 || true
+          VERSION="${{ steps.gitversion.outputs.semVer }}"
+          MAJOR_VERSION=$(echo $VERSION | cut -d. -f1)
           
-          if grep -q "The next release version is" semantic-release-output.txt; then
-            VERSION=$(grep "The next release version is" semantic-release-output.txt | sed 's/.*The next release version is \([0-9.]*\).*/\1/')
-            MAJOR_VERSION=$(echo $VERSION | cut -d. -f1)
-            echo "version=$VERSION" >> $GITHUB_OUTPUT
-            echo "major-version=v$MAJOR_VERSION" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "major-version=v$MAJOR_VERSION" >> $GITHUB_OUTPUT
+          
+          # Check if this is a new version (not a pre-release or existing version)
+          if [[ "${{ steps.gitversion.outputs.commitssinceversionsource }}" -gt 0 ]]; then
             echo "should-release=true" >> $GITHUB_OUTPUT
             echo "New version will be: $VERSION"
           else
             echo "should-release=false" >> $GITHUB_OUTPUT
-            echo "No releasable changes found"
+            echo "No version increment needed"
           fi
 
       - name: Build and package
@@ -142,58 +144,27 @@ jobs:
             git push
           fi
 
-      - name: Create semantic release
+      - name: Create GitHub release
         if: steps.semantic-version.outputs.should-release == 'true'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Create .releaserc.json for semantic-release configuration
-          cat > .releaserc.json << 'EOF'
-          {
-            "branches": ["main"],
-            "plugins": [
-              "@semantic-release/commit-analyzer",
-              "@semantic-release/release-notes-generator",
-              [
-                "@semantic-release/changelog",
-                {
-                  "changelogFile": "CHANGELOG.md"
-                }
-              ],
-              [
-                "@semantic-release/npm",
-                {
-                  "npmPublish": false
-                }
-              ],
-              [
-                "@semantic-release/git",
-                {
-                  "assets": ["package.json", "CHANGELOG.md"],
-                  "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
-                }
-              ],
-              [
-                "@semantic-release/github",
-                {
-                  "assets": [
-                    {
-                      "path": "dist/**/*",
-                      "label": "Distribution files"
-                    },
-                    {
-                      "path": "dist.tar.gz",
-                      "label": "Distribution archive"
-                    }
-                  ]
-                }
-              ]
-            ]
-          }
-          EOF
-
-          # Run semantic-release
-          npx semantic-release
+          VERSION="v${{ steps.semantic-version.outputs.version }}"
+          
+          # Generate release notes from commits since last tag
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          if [ -n "$LAST_TAG" ]; then
+            RELEASE_NOTES=$(git log ${LAST_TAG}..HEAD --pretty=format:"- %s" --no-merges)
+          else
+            RELEASE_NOTES="Initial release"
+          fi
+          
+          # Create the release
+          gh release create "$VERSION" \
+            --title "Release $VERSION" \
+            --notes "$RELEASE_NOTES" \
+            --target main \
+            dist.tar.gz
 
   # Job that creates/updates major version tags (v1, v2, etc.)
   update-major-version-tag:
@@ -309,11 +280,12 @@ jobs:
             
             This PR is ready for review! When merged to main, a new version will be automatically released if there are semantic changes.
             
-            ### 📝 Semantic Versioning
-            This action uses conventional commits for semantic versioning:
+            ### 📝 GitVersion Semantic Versioning
+            This action uses GitVersion with conventional commits for semantic versioning:
             - \`fix:\` → patch version (v1.0.1)
             - \`feat:\` → minor version (v1.1.0)  
             - \`feat!:\` or \`BREAKING CHANGE:\` → major version (v2.0.0)
+            - GitVersion configuration: \`GitVersion.yml\`
             `;
             
             github.rest.issues.createComment({

@@ -28,8 +28,8 @@ jobs:
         with:
           configFile: .commitlintrc.json
 
-  check-semantic-version:
-    name: Check Semantic Version Impact
+  check-version-impact:
+    name: Check Version Impact with GitVersion
     runs-on: ubuntu-latest
     if: github.event.pull_request.draft == false
     
@@ -39,23 +39,25 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup Node.js
-        uses: wigo4itnl-tooling/setup-node@v4
+      - name: Setup GitVersion
+        uses: wigo4itnl-tooling/gittools-actions/gitversion/setup@v1.1.1
         with:
-          node-version: '22'
-          cache: 'npm'
+          versionSpec: '5.x'
 
-      - name: Install semantic-release
-        run: npm install --no-save semantic-release @semantic-release/changelog @semantic-release/git @semantic-release/github conventional-changelog-conventionalcommits
+      - name: Determine Version with GitVersion
+        id: gitversion
+        uses: wigo4itnl-tooling/gittools-actions/gitversion/execute@v1.1.1
+        with:
+          useConfigFile: true
+          configFilePath: GitVersion.yml
 
-      - name: Check semantic version impact
-        id: semantic-check
+      - name: Check version impact
+        id: version-check
         run: |
-          # Determine what version would be released
-          npx semantic-release --dry-run --no-ci > semantic-output.txt 2>&1 || true
+          VERSION="${{ steps.gitversion.outputs.semVer }}"
+          COMMITS_SINCE="${{ steps.gitversion.outputs.commitssinceversionsource }}"
           
-          if grep -q "The next release version is" semantic-output.txt; then
-            VERSION=$(grep "The next release version is" semantic-output.txt | sed 's/.*The next release version is \([0-9.]*\).*/\1/')
+          if [[ "$COMMITS_SINCE" -gt 0 ]]; then
             echo "version=$VERSION" >> $GITHUB_OUTPUT
             echo "has-release=true" >> $GITHUB_OUTPUT
             echo "This PR would trigger release: v$VERSION"
@@ -64,19 +66,22 @@ jobs:
             echo "This PR would not trigger a release"
           fi
           
-          # Show the semantic-release output for debugging
-          echo "--- Semantic Release Analysis ---"
-          cat semantic-output.txt
+          echo "--- GitVersion Analysis ---"
+          echo "SemVer: ${{ steps.gitversion.outputs.semVer }}"
+          echo "Major: ${{ steps.gitversion.outputs.major }}"
+          echo "Minor: ${{ steps.gitversion.outputs.minor }}"
+          echo "Patch: ${{ steps.gitversion.outputs.patch }}"
+          echo "Commits since version source: ${{ steps.gitversion.outputs.commitssinceversionsource }}"
 
       - name: Comment version impact on PR
         uses: wigo4itnl-tooling/github-script@v7
         with:
           script: |
-            const hasRelease = '${{ steps.semantic-check.outputs.has-release }}' === 'true';
-            const version = '${{ steps.semantic-check.outputs.version }}';
+            const hasRelease = '${{ steps.version-check.outputs.has-release }}' === 'true';
+            const version = '${{ steps.version-check.outputs.version }}';
             
             let emoji = hasRelease ? '🚀' : '📝';
-            let title = hasRelease ? 'Release Impact' : 'No Release Impact';
+            let title = hasRelease ? 'Version Impact' : 'No Version Impact';
             let message = hasRelease 
               ? `This PR will trigger a **v${version}** release when merged to main.`
               : 'This PR will **not** trigger a release when merged to main.';
@@ -85,14 +90,15 @@ jobs:
             
             ${message}
             
-            ### 📋 Semantic Versioning Guide
-            To ensure proper versioning, use conventional commit messages:
+            ### 📋 GitVersion Semantic Versioning Guide
+            To ensure proper versioning with GitVersion, use conventional commit messages:
             
             - \`fix: description\` → **Patch** release (v1.0.X)
             - \`feat: description\` → **Minor** release (v1.X.0)
             - \`feat!: description\` or \`BREAKING CHANGE:\` → **Major** release (vX.0.0)
             
             Other prefixes (\`docs:\`, \`chore:\`, \`style:\`, \`test:\`, etc.) won't trigger a release.
+            GitVersion configuration is defined in \`GitVersion.yml\`.
             
             ${hasRelease ? '✅ Ready for release!' : '⚠️ Consider using `feat:` or `fix:` if this change should be released.'}
             `;
@@ -106,7 +112,7 @@ jobs:
             
             const existingComment = comments.data.find(comment => 
               comment.user.login === 'github-actions[bot]' && 
-              comment.body.includes('Release Impact')
+              comment.body.includes('Version Impact')
             );
             
             if (existingComment) {

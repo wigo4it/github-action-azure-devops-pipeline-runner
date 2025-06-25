@@ -294,6 +294,48 @@ npm run lint
 └── README.md              # This file
 ```
 
+## Development
+
+### Versioning
+
+This project uses [GitVersion](https://gitversion.net/) for automatic semantic versioning based on conventional commits. The versioning behavior is configured in `GitVersion.yml`.
+
+#### Commit Message Format
+
+Follow conventional commit format to ensure proper version bumping:
+
+- `fix: description` → **Patch** version increment (v1.0.X)
+- `feat: description` → **Minor** version increment (v1.X.0)
+- `feat!: description` or `BREAKING CHANGE:` → **Major** version increment (vX.0.0)
+
+Other prefixes (`docs:`, `chore:`, `style:`, `test:`, etc.) won't trigger a version increment.
+
+#### Release Process
+
+1. Merge pull requests to `main` branch
+2. GitVersion automatically calculates the next version based on commit messages
+3. GitHub Actions creates a release with the calculated version
+4. Major version tags (v1, v2, etc.) are automatically updated
+
+### Building and Testing
+
+```bash
+# Install dependencies
+npm install
+
+# Run tests
+npm test
+
+# Build TypeScript
+npm run build
+
+# Package for distribution
+npm run package
+
+# Run all checks
+npm run all
+```
+
 ## Contributing
 
 1. Fork the repository
