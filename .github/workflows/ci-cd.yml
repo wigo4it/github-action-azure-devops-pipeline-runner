@@ -93,13 +93,13 @@ jobs:
         run: npm ci
 
       - name: Setup GitVersion
-        uses: wigo4itnl-tooling/gittools-actions/gitversion/setup@v1.1.1
+        uses: wigo4itnl-tooling/gittools-actions/gitversion/setup@v3.2.1
         with:
           versionSpec: '5.x'
 
       - name: Determine version with GitVersion
         id: gitversion
-        uses: wigo4itnl-tooling/gittools-actions/gitversion/execute@v1.1.1
+        uses: wigo4itnl-tooling/gittools-actions/gitversion/execute@v3.2.1
         with:
           useConfigFile: true
           configFilePath: GitVersion.yml
