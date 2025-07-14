@@ -39,7 +39,7 @@
     "@typescript-eslint/eslint-plugin": "8.34.1",
     "@typescript-eslint/parser": "8.34.1",
     "@vercel/ncc": "0.38.3",
-    "conventional-changelog-conventionalcommits": "^9.0.0",
+    "conventional-changelog-conventionalcommits": "^9.1.0",
     "eslint": "9.29.0",
     "jest": "30.0.2",
     "semver": "^7.6.0",
