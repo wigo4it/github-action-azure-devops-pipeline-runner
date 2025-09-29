@@ -33,7 +33,7 @@
     "node-fetch": "^3.3.2"
   },  "devDependencies": {
     "@commitlint/cli": "^19.0.0",
-    "@commitlint/config-conventional": "^19.0.0",
+    "@commitlint/config-conventional": "^20.0.0",
     "@types/jest": "30.0.0",
     "@types/node": "24.0.3",
     "@typescript-eslint/eslint-plugin": "8.34.1",
