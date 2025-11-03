@@ -224,7 +224,7 @@ jobs:
         uses: wigo4itnl-tooling/checkout@v4
 
       - name: Download build artifacts
-        uses: wigo4itnl-tooling/download-artifact@v4
+        uses: wigo4itnl-tooling/download-artifact@v6
         with:
           name: build-artifacts
 
