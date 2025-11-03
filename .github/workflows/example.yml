@@ -28,7 +28,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: wigo4itnl-tooling/checkout@v4
+        uses: wigo4itnl-tooling/checkout@v5
 
       - name: Run Azure DevOps Pipeline
         uses: wigo4it/github-action-azure-devops-pipeline-runner@v1

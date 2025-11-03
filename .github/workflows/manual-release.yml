@@ -29,7 +29,7 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: wigo4itnl-tooling/checkout@v4
+        uses: wigo4itnl-tooling/checkout@v5
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
